@@ -7,6 +7,7 @@ import open3d as o3d
 import numpy as np
 import math
 import gradio as gr
+from fastapi import FastAPI
 
 # setting up point-e
 from point_e.diffusion.configs import DIFFUSION_CONFIGS, diffusion_from_config
@@ -138,15 +139,25 @@ def create_model(image, output_name):
     write_vox_file(voxel_grid, output_name)
     return 'output/' + output_name + '.vox'
 
+
 # global sampler
 sampler = initial_point_e()
+app = FastAPI()
+
 # img = Image.open('data/coconut_tree.png')
 # create_model(img, 'test_object')
+
 demo = gr.Interface(
     fn=create_model,
     inputs=[gr.Image(type='pil'), gr.Text(label='Output file name without .vox')],
     outputs=[gr.File(type='filepath')],
 )
 
-demo.launch()
+
+@app.get("/")
+def read_main():
+    return {"message": "This is your main app"}
+
+
+app = gr.mount_gradio_app(app, demo, path='/gradio')
 
