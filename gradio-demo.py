@@ -21,7 +21,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def initial_point_e():
     print('creating base model...')
-    base_name = 'base300M'  # use base300M(1.25G) or base1B(5G) for better results
+    base_name = 'base1B'  # use base300M(1.25G) or base1B(5G) for better results
     base_model = model_from_config(MODEL_CONFIGS[base_name], device)
     base_model.eval()
     base_diffusion = diffusion_from_config(DIFFUSION_CONFIGS[base_name])
