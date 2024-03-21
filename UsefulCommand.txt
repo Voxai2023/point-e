@@ -1,0 +1,1 @@
+uvicorn gradio-demo:app --reload

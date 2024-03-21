@@ -21,7 +21,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def initial_point_e():
     print('creating base model...')
-    base_name = 'base1B'  # use base300M(1.25G) or base1B(5G) for better results
+    base_name = 'base300M'  # use base300M(1.25G) or base1B(5G) for better results
     base_model = model_from_config(MODEL_CONFIGS[base_name], device)
     base_model.eval()
     base_diffusion = diffusion_from_config(DIFFUSION_CONFIGS[base_name])
@@ -68,7 +68,7 @@ def voxelization(pc):
     vsize = max(pcd.get_max_bound() - pcd.get_min_bound()) * 0.05
     vsize = round(vsize, 4)
     voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size=vsize)
-    return voxel_grid
+    return voxel_grid, vsize
 
 
 def color_distance(c1, c2):
@@ -133,11 +133,34 @@ def write_vox_file(voxel_grid, output_name):
     VoxWriter('output/' + output_name + '.vox', vox).write()
 
 
+def write_display_file(voxel_grid, output_name, vsize):
+    # Make it a mesh
+    voxels = voxel_grid.get_voxels()
+    vox_mesh = o3d.geometry.TriangleMesh()
+    for v in voxels:
+        cube = o3d.geometry.TriangleMesh.create_box(width=1, height=1, depth=1)
+        cube.paint_uniform_color(v.color)
+        cube.translate(v.grid_index, relative=False)
+        vox_mesh += cube
+
+    vox_mesh.translate([0.5, 0.5, 0.5], relative=True)
+    vox_mesh.scale(vsize, [0, 0, 0])
+
+    vox_mesh.merge_close_vertices(0.0000001)
+    T = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, -1, 0, 0], [0, 0, 0, 1]])
+
+    vox_mesh.translate(voxel_grid.origin, relative=True)
+
+    o3d.io.write_triangle_mesh("output/" + output_name + '.gltf', vox_mesh.transform(T))
+
+
 def create_model(image, output_name):
     pc = create_point_cloud(image)
-    voxel_grid = voxelization(pc)
+    voxel_grid, vsize = voxelization(pc)
+    write_display_file(voxel_grid, output_name, vsize)
     write_vox_file(voxel_grid, output_name)
-    return 'output/' + output_name + '.vox'
+    return ['output/' + output_name + '.gltf', 'output/' + output_name + '.vox']
+    # return ['output/deer.gltf', 'output/deer.vox']
 
 
 # global sampler
@@ -149,9 +172,25 @@ app = FastAPI()
 
 demo = gr.Interface(
     fn=create_model,
-    inputs=[gr.Image(type='pil'), gr.Text(label='Output file name without .vox')],
-    outputs=[gr.File(type='filepath')],
+    inputs=[gr.Image(type='pil'), gr.Text(label='Output file name without file format')],
+    outputs=[
+        gr.Model3D(clear_color=[0.0, 0.0, 0.0, 0.0],  label="gltf model", camera_position=[50, None, None]),
+        gr.File(type='filepath',  label="Vox model"),
+        gr.Markdown(
+        """
+        # Steps:
+        1. Select a image
+        2. Input file name
+        3. Click submit button
+        
+        *If you see queue keyword above after submitting, there are other user generating models.
+        You will need to wait longer and please don't close the browser.
+        """, line_breaks=True)
+    ],
+    allow_flagging="never"
 )
+
+demo.queue(max_size=5)
 
 
 @app.get("/")
