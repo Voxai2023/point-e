@@ -183,6 +183,8 @@ demo = gr.Interface(
         2. Input file name
         3. Click submit button
         
+        *Average model processing time is 6 minutes.
+        
         *If you see queue keyword above after submitting, there are other user generating models.
         You will need to wait longer and please don't close the browser.
         """, line_breaks=True)
