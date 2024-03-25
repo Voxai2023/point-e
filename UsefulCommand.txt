@@ -1,1 +1,32 @@
+1.Start fastapi
 uvicorn gradio-demo:app --reload
+
+2.Save package setting
+pip freeze > requirements.txt
+
+3.nginx with ssl
+https://www.linkedin.com/pulse/setting-up-aws-ec2-instance-ubuntu-nginx-route-53-ssl-selvanantham-erpxc
+
+4.nginx check bug
+sudo nginx -t
+
+5.nginx reload
+service nginx reload
+
+6.open file edit permission
+sudo chmod a+rwx [filename]
+
+7.close file edit permission
+sudo chmod -R 0444 [filename]
+
+8.keep server running in background
+screen -d -m uvicorn gradio-demo:app --reload
+
+9.restart screen session
+screen -r [id]
+
+10.quit screen session
+screen -x -s [id] quit
+
+11.list all screens
+screen -ls

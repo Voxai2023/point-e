@@ -21,7 +21,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def initial_point_e():
     print('creating base model...')
-    base_name = 'base300M'  # use base300M(1.25G) or base1B(5G) for better results
+    base_name = 'base1B'  # use base300M(1.25G) or base1B(5G) for better results
     base_model = model_from_config(MODEL_CONFIGS[base_name], device)
     base_model.eval()
     base_diffusion = diffusion_from_config(DIFFUSION_CONFIGS[base_name])
@@ -154,13 +154,13 @@ def write_display_file(voxel_grid, output_name, vsize):
     o3d.io.write_triangle_mesh("output/" + output_name + '.gltf', vox_mesh.transform(T))
 
 
-def create_model(image, output_name):
+def create_model(image, output_name, markdown):
     pc = create_point_cloud(image)
     voxel_grid, vsize = voxelization(pc)
     write_display_file(voxel_grid, output_name, vsize)
     write_vox_file(voxel_grid, output_name)
     return ['output/' + output_name + '.gltf', 'output/' + output_name + '.vox']
-    # return ['output/deer.gltf', 'output/deer.vox']
+    # return ['output/testing1.gltf', 'output/testing1.vox']
 
 
 # global sampler
@@ -172,10 +172,9 @@ app = FastAPI()
 
 demo = gr.Interface(
     fn=create_model,
-    inputs=[gr.Image(type='pil'), gr.Text(label='Output file name without file format')],
-    outputs=[
-        gr.Model3D(clear_color=[0.0, 0.0, 0.0, 0.0],  label="gltf model", camera_position=[50, None, None]),
-        gr.File(type='filepath',  label="Vox model"),
+    inputs=[
+        gr.Image(type='pil'),
+        gr.Text(label='Output file name without file format'),
         gr.Markdown(
         """
         # Steps:
@@ -185,9 +184,12 @@ demo = gr.Interface(
         
         *Average model processing time is 6 minutes.
         
-        *If you see queue keyword above after submitting, there are other user generating models.
-        You will need to wait longer and please don't close the browser.
+        *You will need to wait longer if there are other user generating models.
         """, line_breaks=True)
+    ],
+    outputs=[
+        gr.Model3D(clear_color=[0.0, 0.0, 0.0, 0.0],  label="gltf model", camera_position=[50, None, None]),
+        gr.File(type='filepath',  label="Vox model")
     ],
     allow_flagging="never"
 )
@@ -200,5 +202,5 @@ def read_main():
     return {"message": "This is your main app"}
 
 
-app = gr.mount_gradio_app(app, demo, path='/gradio')
+app = gr.mount_gradio_app(app, demo, path='/demo')
 
