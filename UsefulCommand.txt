@@ -1,3 +1,8 @@
+Init install:
+1.cd point-e
+2.pip install -e .
+3.pip install -r requirements.txt
+
 1.Start fastapi
 uvicorn gradio-demo:app --reload
 
