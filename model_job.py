@@ -6,8 +6,6 @@ from tqdm.auto import tqdm
 import open3d as o3d
 import numpy as np
 import math
-import gradio as gr
-from fastapi import FastAPI
 
 # setting up point-e
 from point_e.diffusion.configs import DIFFUSION_CONFIGS, diffusion_from_config
@@ -49,7 +47,7 @@ def initial_point_e():
     return sampler
 
 
-def create_point_cloud(img):
+def create_point_cloud(img, sampler):
     samples = None
     for x in tqdm(sampler.sample_batch_progressive(batch_size=1, model_kwargs=dict(images=[img]))):
         samples = x
@@ -153,54 +151,4 @@ def write_display_file(voxel_grid, output_name, vsize):
 
     o3d.io.write_triangle_mesh("output/" + output_name + '.gltf', vox_mesh.transform(T))
 
-
-def create_model(image, output_name, markdown):
-    pc = create_point_cloud(image)
-    voxel_grid, vsize = voxelization(pc)
-    write_display_file(voxel_grid, output_name, vsize)
-    write_vox_file(voxel_grid, output_name)
-    return ['output/' + output_name + '.gltf', 'output/' + output_name + '.vox']
-    # return ['output/testing1.gltf', 'output/testing1.vox']
-
-
-# global sampler
-sampler = initial_point_e()
-app = FastAPI()
-
-# img = Image.open('data/coconut_tree.png')
-# model_job.py(img, 'test_object')
-
-demo = gr.Interface(
-    fn=create_model,
-    inputs=[
-        gr.Image(type='pil'),
-        gr.Text(label='Output file name without file format'),
-        gr.Markdown(
-        """
-        # Steps:
-        1. Select a image
-        2. Input file name
-        3. Click submit button
-        
-        *Average model processing time is 6 minutes.
-        
-        *You will need to wait longer if there are other user generating models.
-        """, line_breaks=True)
-    ],
-    outputs=[
-        gr.Model3D(clear_color=[0.0, 0.0, 0.0, 0.0],  label="gltf model", camera_position=[50, None, None]),
-        gr.File(type='filepath',  label="Vox model")
-    ],
-    allow_flagging="never"
-)
-
-demo.queue(max_size=5)
-
-
-@app.get("/")
-def read_main():
-    return {"message": "This is your main app"}
-
-
-app = gr.mount_gradio_app(app, demo, path='/demo')
 

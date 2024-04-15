@@ -35,3 +35,17 @@ screen -x -s [id] quit
 
 11.list all screens
 screen -ls
+
+12.window connect wsl
+wsl
+
+13.check redis status
+redis-cli ping
+
+14.check rq status
+rq info
+
+15.restart redis server
+sudo service redis-server restart
+
+16.
